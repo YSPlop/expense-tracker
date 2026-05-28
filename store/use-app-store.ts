@@ -167,6 +167,13 @@ export function useBalance() {
   return transactions.reduce((sum, t) => (t.type === 'income' ? sum + t.amount : sum - t.amount), 0);
 }
 
+export function useTotalByType(type: TransactionType) {
+  const transactions = useAppStore((s) => s.transactions);
+  return transactions
+    .filter((t) => t.type === type)
+    .reduce((sum, t) => sum + t.amount, 0);
+}
+
 export function useRecentTransactions(limit = 50) {
   const transactions = useAppStore((s) => s.transactions);
   return [...transactions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit);

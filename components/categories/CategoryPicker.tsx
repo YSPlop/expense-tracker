@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CategoryIcon } from '@/components/categories/CategoryIcon';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import type { Category } from '@/types/category';
-import type { TransactionType } from '@/types/transaction';
 import { Radius, Spacing, Typography } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-app-theme';
+import type { Category } from '@/types/category';
+import type { TransactionType } from '@/types/transaction';
 
 type CategoryPickerProps = {
   type: TransactionType;
@@ -24,8 +25,18 @@ export function CategoryPicker({ type, categories, selectedId, onSelect }: Categ
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
-        <Pressable onPress={() => router.push('/categories')} hitSlop={8}>
-          <Text style={[styles.manage, { color: colors.tint }]}>Manage</Text>
+        <Pressable
+          onPress={() => router.push('/categories')}
+          hitSlop={12}
+          style={[
+            styles.manageBtn,
+            {
+              backgroundColor: colors.glassFillStrong,
+              borderColor: colors.glassBorder,
+            },
+          ]}>
+          <Text style={[styles.manageText, { color: colors.tint }]}>Manage</Text>
+          <IconSymbol name="chevron.right" size={12} color={colors.tint} />
         </Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -42,7 +53,7 @@ export function CategoryPicker({ type, categories, selectedId, onSelect }: Categ
                 },
               ]}
               onPress={() => onSelect(category.id)}>
-              <IconSymbol name={category.icon as 'fork.knife'} size={18} color={category.color} />
+              <CategoryIcon icon={category.icon} size={18} color={category.color} />
               <Text style={[styles.chipLabel, { color: colors.text }]}>{category.title}</Text>
             </Pressable>
           );
@@ -66,8 +77,17 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  manage: {
-    ...Typography.caption,
+  manageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  manageText: {
+    fontSize: 14,
     fontWeight: '600',
   },
   scroll: {
@@ -77,7 +97,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Spacing.sm,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.full,

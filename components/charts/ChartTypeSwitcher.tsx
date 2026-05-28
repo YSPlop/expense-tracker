@@ -1,12 +1,15 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { ChartType } from '@/types/analytics';
 import { Radius, Spacing, Typography } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-app-theme';
+import { useSpringPress } from '@/hooks/motion/use-spring-press';
+import type { AppIconName } from '@/types/icons';
 
-const CHART_OPTIONS: { value: ChartType; label: string; icon: string }[] = [
+const CHART_OPTIONS: { value: ChartType; label: string; icon: AppIconName }[] = [
   { value: 'donut', label: 'Donut', icon: 'chart.donut' },
   { value: 'pie', label: 'Pie', icon: 'chart.pie.fill' },
   { value: 'bar', label: 'Bar', icon: 'chart.bar.fill' },
@@ -14,67 +17,90 @@ const CHART_OPTIONS: { value: ChartType; label: string; icon: string }[] = [
   { value: 'categories', label: 'Cards', icon: 'square.grid.2x2.fill' },
 ];
 
+type ChartChipProps = {
+  option: (typeof CHART_OPTIONS)[number];
+  selected: boolean;
+  onChange: (value: ChartType) => void;
+};
+
+function ChartChip({ option, selected, onChange }: ChartChipProps) {
+  const { colors } = useAppTheme();
+  const { animatedStyle, onPressIn, onPressOut, handlePress } = useSpringPress({
+    haptic: false,
+    onPress: () => {
+      Haptics.selectionAsync();
+      onChange(option.value);
+    },
+  });
+
+  return (
+    <Pressable onPress={handlePress} onPressIn={onPressIn} onPressOut={onPressOut}>
+      <Animated.View
+        style={[
+          styles.chip,
+          animatedStyle,
+          {
+            backgroundColor: selected ? colors.glassFillStrong : colors.glassFill,
+            borderColor: selected ? colors.tint : colors.glassBorder,
+          },
+        ]}>
+        <IconSymbol
+          name={option.icon}
+          size={18}
+          color={selected ? colors.tint : colors.textSecondary}
+        />
+        <Text
+          style={[
+            styles.chipLabel,
+            { color: selected ? colors.tint : colors.textSecondary },
+          ]}>
+          {option.label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 type ChartTypeSwitcherProps = {
   value: ChartType;
   onChange: (value: ChartType) => void;
 };
 
 export function ChartTypeSwitcher({ value, onChange }: ChartTypeSwitcherProps) {
-  const { colors } = useAppTheme();
-
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-      {CHART_OPTIONS.map((option) => {
-        const selected = option.value === value;
-        return (
-          <Pressable
-            key={option.value}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: selected ? colors.glassFillStrong : colors.glassFill,
-                borderColor: selected ? colors.tint : colors.glassBorder,
-              },
-            ]}
-            onPress={() => {
-              Haptics.selectionAsync();
-              onChange(option.value);
-            }}>
-            <IconSymbol
-              name={option.icon as 'chart.pie.fill'}
-              size={16}
-              color={selected ? colors.tint : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.label,
-                { color: selected ? colors.tint : colors.textSecondary },
-              ]}>
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.row}>
+      {CHART_OPTIONS.map((option) => (
+        <ChartChip
+          key={option.value}
+          option={option}
+          selected={value === option.value}
+          onChange={onChange}
+        />
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  row: {
+    flexDirection: 'row',
     gap: Spacing.sm,
     paddingVertical: Spacing.xs,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Spacing.xs,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
-    borderRadius: Radius.full,
+    borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  label: {
+  chipLabel: {
     ...Typography.caption,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

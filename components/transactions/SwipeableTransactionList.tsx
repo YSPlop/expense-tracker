@@ -2,7 +2,8 @@ import * as Haptics from 'expo-haptics';
 import { StyleSheet, Text, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
-import { GlassCard } from '@/components/glass/GlassCard';
+import { GlassCard } from '@/components/glass';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TransactionRow } from '@/components/transactions/TransactionRow';
 import { useAppTheme } from '@/hooks/use-app-theme';
@@ -28,20 +29,21 @@ export function SwipeableTransactionList({
     return (
       <EmptyState
         title="No transactions yet"
-        message="Tap Expense or Income above to add your first entry."
+        message="Tap + below to add your first expense."
         icon="tray"
       />
     );
   }
 
   return (
-    <GlassCard padding={Spacing.sm}>
+    <GlassCard padding={Spacing.sm} shadow={false}>
       {transactions.map((transaction, index) => {
         const category = categories.find((c) => c.id === transaction.categoryId);
 
         const renderRightActions = () => (
           <View style={styles.deleteAction}>
-            <Text style={styles.deleteText}>Delete</Text>
+            <IconSymbol name="dollarsign.circle.fill" size={20} color="#fff" />
+            <Text style={styles.deleteText}>− $</Text>
           </View>
         );
 
@@ -73,16 +75,18 @@ export function SwipeableTransactionList({
 const styles = StyleSheet.create({
   deleteAction: {
     backgroundColor: '#FF453A',
+    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.lg,
     borderRadius: 12,
     marginVertical: 4,
     minWidth: 90,
   },
   deleteText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 15,
   },
   separator: {

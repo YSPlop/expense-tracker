@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GlassCard } from '@/components/glass/GlassCard';
+import { CategoryIcon } from '@/components/categories/CategoryIcon';
+import { FrostedHeader, GlassCard } from '@/components/glass';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import {
   CATEGORY_COLOR_PRESETS,
@@ -24,6 +25,7 @@ import { useAppTheme } from '@/hooks/use-app-theme';
 import { useAppStore } from '@/store/use-app-store';
 import type { Category } from '@/types/category';
 import type { TransactionType } from '@/types/transaction';
+import { isCategoryEmojiIcon } from '@/utils/category-icon';
 
 export default function CategoriesScreen() {
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function CategoriesScreen() {
   const [isNew, setIsNew] = useState(false);
   const [title, setTitle] = useState('');
   const [icon, setIcon] = useState(CATEGORY_ICON_PRESETS[0]);
+  const [emojiText, setEmojiText] = useState('');
   const [color, setColor] = useState(CATEGORY_COLOR_PRESETS[0]);
   const [type, setType] = useState<TransactionType>('expense');
 
@@ -48,6 +51,7 @@ export default function CategoriesScreen() {
     setEditing(null);
     setTitle('');
     setIcon(CATEGORY_ICON_PRESETS[0]);
+    setEmojiText('');
     setColor(CATEGORY_COLOR_PRESETS[0]);
     setType('expense');
   };
@@ -57,12 +61,27 @@ export default function CategoriesScreen() {
     setEditing(category);
     setTitle(category.title);
     setIcon(category.icon);
+    setEmojiText(isCategoryEmojiIcon(category.icon) ? category.icon : '');
     setColor(category.color);
     setType(category.type === 'income' ? 'income' : 'expense');
   };
 
+  const selectPreset = (iconName: string) => {
+    setIcon(iconName);
+    setEmojiText('');
+  };
+
+  const handleEmojiChange = (value: string) => {
+    const trimmed = value.trim();
+    setEmojiText(value);
+    if (trimmed) {
+      const chars = [...trimmed];
+      setIcon(chars[0] ?? trimmed);
+    }
+  };
+
   const handleSave = () => {
-    if (!title.trim()) return;
+    if (!title.trim() || !icon.trim()) return;
 
     if (isNew) {
       addCategory({ title: title.trim(), icon, color, type });
@@ -91,32 +110,47 @@ export default function CategoriesScreen() {
   };
 
   const showForm = isNew || editing !== null;
+  const usingEmoji = isCategoryEmojiIcon(icon);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={[styles.close, { color: colors.tint }]}>Done</Text>
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
-        <Pressable onPress={startNew} hitSlop={12}>
-          <IconSymbol name="plus.circle.fill" size={28} color={colors.tint} />
-        </Pressable>
-      </View>
+      <FrostedHeader
+        title="Categories"
+        left={
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Text style={[styles.close, { color: colors.tint }]}>Done</Text>
+          </Pressable>
+        }
+        right={
+          <Pressable onPress={startNew} hitSlop={12}>
+            <IconSymbol name="plus.circle.fill" size={28} color={colors.tint} />
+          </Pressable>
+        }
+      />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Spacing.xl }]}
+        showsVerticalScrollIndicator={false}>
         {showForm ? (
           <GlassCard style={styles.formCard}>
             <Text style={[styles.formTitle, { color: colors.text }]}>
               {isNew ? 'New Category' : 'Edit Category'}
             </Text>
 
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Title</Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
               placeholder="Title"
               placeholderTextColor={colors.textSecondary}
-              style={[styles.input, { color: colors.text, borderColor: colors.glassBorder }]}
+              style={[
+                styles.input,
+                {
+                  color: colors.text,
+                  borderColor: colors.glassBorder,
+                  backgroundColor: colors.glassFill,
+                },
+              ]}
             />
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Type</Text>
@@ -139,7 +173,40 @@ export default function CategoriesScreen() {
               ))}
             </View>
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Icon</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Emoji</Text>
+            <View style={styles.emojiRow}>
+              <TextInput
+                value={emojiText}
+                onChangeText={handleEmojiChange}
+                placeholder="🍕"
+                placeholderTextColor={colors.textSecondary}
+                style={[
+                  styles.emojiInput,
+                  {
+                    color: colors.text,
+                    borderColor: colors.glassBorder,
+                    backgroundColor: colors.glassFill,
+                  },
+                ]}
+                maxLength={4}
+              />
+              <View
+                style={[
+                  styles.iconCell,
+                  {
+                    backgroundColor: usingEmoji ? `${color}33` : colors.glassFill,
+                    borderColor: usingEmoji ? color : colors.glassBorder,
+                  },
+                ]}>
+                {usingEmoji ? (
+                  <CategoryIcon icon={icon} size={24} color={color} />
+                ) : (
+                  <Text style={{ color: colors.textSecondary, fontSize: 20 }}>?</Text>
+                )}
+              </View>
+            </View>
+
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Icon presets</Text>
             <View style={styles.iconGrid}>
               {CATEGORY_ICON_PRESETS.map((iconName) => (
                 <Pressable
@@ -147,11 +214,13 @@ export default function CategoriesScreen() {
                   style={[
                     styles.iconCell,
                     {
-                      backgroundColor: icon === iconName ? `${color}33` : colors.glassFill,
-                      borderColor: icon === iconName ? color : colors.glassBorder,
+                      backgroundColor:
+                        !usingEmoji && icon === iconName ? `${color}33` : colors.glassFill,
+                      borderColor:
+                        !usingEmoji && icon === iconName ? color : colors.glassBorder,
                     },
                   ]}
-                  onPress={() => setIcon(iconName)}>
+                  onPress={() => selectPreset(iconName)}>
                   <IconSymbol name={iconName as 'fork.knife'} size={22} color={color} />
                 </Pressable>
               ))}
@@ -213,7 +282,7 @@ function CategoryListItem({ category, onPress }: { category: Category; onPress: 
       <GlassCard padding={Spacing.md}>
         <View style={styles.listItem}>
           <View style={[styles.listIcon, { backgroundColor: `${category.color}22` }]}>
-            <IconSymbol name={category.icon as 'fork.knife'} size={22} color={category.color} />
+            <CategoryIcon icon={category.icon} size={22} color={category.color} />
           </View>
           <Text style={[styles.listTitle, { color: colors.text }]}>{category.title}</Text>
           <IconSymbol name="chevron.right" size={18} color={colors.textSecondary} />
@@ -282,14 +351,15 @@ const styles = StyleSheet.create({
   },
   input: {
     ...Typography.body,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   label: {
     ...Typography.caption,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: Spacing.sm,
   },
   typeRow: {
     flexDirection: 'row',
@@ -301,6 +371,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  emojiRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  emojiInput: {
+    flex: 1,
+    ...Typography.body,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    fontSize: 24,
+    textAlign: 'center',
   },
   iconGrid: {
     flexDirection: 'row',
@@ -329,7 +414,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: Radius.lg,
     alignItems: 'center',
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
   },
   saveBtnText: {
     color: '#fff',

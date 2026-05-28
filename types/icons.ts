@@ -15,6 +15,7 @@ export type AppIconName =
   | 'xmark'
   | 'pencil'
   | 'trash'
+  | 'trash.fill'
   | 'chart.pie.fill'
   | 'chart.bar.fill'
   | 'chart.line.uptrend.xyaxis'
@@ -27,4 +28,7 @@ export type AppIconName =
   | 'gamecontroller.fill'
   | 'gift.fill'
   | 'airplane'
-  | 'book.fill';
+  | 'book.fill'
+  | 'gearshape.fill'
+  | 'star.fill'
+  | 'plus';

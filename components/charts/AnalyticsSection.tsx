@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { GlassCard } from '@/components/glass/GlassCard';
+import { GlassCard, GlassChartContainer } from '@/components/glass';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { AnimatedAmount } from '@/components/ui/AnimatedAmount';
 import { BarChartView } from '@/components/charts/BarChartView';
 import { CategoryBreakdownCards } from '@/components/charts/CategoryBreakdownCards';
 import { ChartTypeSwitcher } from '@/components/charts/ChartTypeSwitcher';
@@ -13,7 +13,6 @@ import { useAppTheme } from '@/hooks/use-app-theme';
 import { useAppStore } from '@/store/use-app-store';
 import type { ChartType, TimeRange } from '@/types/analytics';
 import { Spacing, Typography } from '@/constants/theme';
-import { formatMoney } from '@/utils/money';
 
 const TIME_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: 'weekly', label: 'Week' },
@@ -50,35 +49,36 @@ export function AnalyticsSection() {
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Insights</Text>
       <GlassCard>
         <SegmentedControl options={TIME_OPTIONS} value={timeRange} onChange={setTimeRange} />
 
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Spent</Text>
-            <Text style={[styles.summaryValue, { color: colors.expense }]}>
-              {formatMoney(analytics.totalExpense)}
-            </Text>
+            <AnimatedAmount
+              cents={analytics.totalExpense}
+              color={colors.expense}
+              style={styles.summaryValue}
+            />
           </View>
           <View style={[styles.divider, { backgroundColor: colors.separator }]} />
           <View style={styles.summaryItem}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Earned</Text>
-            <Text style={[styles.summaryValue, { color: colors.income }]}>
-              {formatMoney(analytics.totalIncome)}
-            </Text>
+            <AnimatedAmount
+              cents={analytics.totalIncome}
+              color={colors.income}
+              style={styles.summaryValue}
+            />
           </View>
         </View>
 
         <ChartTypeSwitcher value={chartType} onChange={setChartType} />
 
-        <Animated.View
-          key={chartKey}
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(200)}
-          style={styles.chartContainer}>
-          {renderChart()}
-        </Animated.View>
+        <View key={chartKey}>
+          <GlassChartContainer minHeight={chartType === 'categories' ? 120 : 200}>
+            {renderChart()}
+          </GlassChartContainer>
+        </View>
 
         {chartType !== 'categories' && (
           <CategoryBreakdownCards data={analytics.categoryTotals} />
@@ -91,9 +91,6 @@ export function AnalyticsSection() {
 const styles = StyleSheet.create({
   section: {
     gap: Spacing.md,
-  },
-  sectionTitle: {
-    ...Typography.sectionTitle,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -111,17 +108,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   summaryValue: {
-    ...Typography.amount,
     fontSize: 18,
   },
   divider: {
     width: StyleSheet.hairlineWidth,
     marginVertical: 4,
-  },
-  chartContainer: {
-    alignItems: 'center',
-    paddingVertical: Spacing.lg,
-    minHeight: 160,
-    justifyContent: 'center',
   },
 });

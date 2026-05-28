@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
+import { QuickAddProvider } from '@/context/QuickAddContext';
+import { useQuickAddDeepLink } from '@/hooks/use-quick-add-deep-link';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
@@ -18,16 +20,25 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <BottomSheetModalProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="categories"
-              options={{ presentation: 'modal', headerShown: false }}
-            />
-          </Stack>
-          <StatusBar style="auto" />
+          <QuickAddProvider>
+            <QuickAddDeepLinkBootstrap />
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="categories"
+                options={{ presentation: 'modal', headerShown: false }}
+              />
+              <Stack.Screen name="quick-add" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </QuickAddProvider>
         </BottomSheetModalProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
+}
+
+function QuickAddDeepLinkBootstrap() {
+  useQuickAddDeepLink();
+  return null;
 }

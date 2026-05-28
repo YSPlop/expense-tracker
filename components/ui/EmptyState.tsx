@@ -4,7 +4,7 @@ import { Spacing, Typography } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { AppIconName } from '@/types/icons';
-import { GlassCard } from '@/components/glass/GlassCard';
+import { GlassCard } from '@/components/glass';
 
 type EmptyStateProps = {
   title: string;

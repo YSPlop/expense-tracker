@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import type { TimeBucket } from '@/types/analytics';
 import { Spacing, Typography } from '@/constants/theme';
@@ -50,12 +50,6 @@ export function LineChartView({ buckets }: LineChartViewProps) {
   return (
     <View style={styles.container}>
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
-        <Defs>
-          <LinearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor={colors.expense} stopOpacity={0.3} />
-            <Stop offset="100%" stopColor={colors.expense} stopOpacity={0} />
-          </LinearGradient>
-        </Defs>
         {expensePath ? (
           <Path d={expensePath} stroke={colors.expense} strokeWidth={2.5} fill="none" />
         ) : null}

@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DOCK_EXTRA_BOTTOM } from '@/constants/layout';
 import { BackgroundGradients, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-app-theme';
 
@@ -10,19 +11,25 @@ type SafeScreenProps = {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: ViewStyle;
+  /** Rendered above scroll content (e.g. hero balance). Avoid layout animations on this node when it contains blur. */
+  header?: ReactNode;
 };
 
-export function SafeScreen({ children, scroll = true, contentStyle }: SafeScreenProps) {
+export function SafeScreen({
+  children,
+  scroll = true,
+  contentStyle,
+  header,
+}: SafeScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors, scheme } = useAppTheme();
+  const { scheme } = useAppTheme();
+
+  const paddingTop = insets.top + Spacing.md;
+  const paddingBottom = insets.bottom + DOCK_EXTRA_BOTTOM;
 
   const content = (
-    <View
-      style={[
-        styles.content,
-        { paddingTop: insets.top + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
-        contentStyle,
-      ]}>
+    <View style={[styles.content, { paddingTop, paddingBottom }, contentStyle]}>
+      {header}
       {children}
     </View>
   );
@@ -37,7 +44,8 @@ export function SafeScreen({ children, scroll = true, contentStyle }: SafeScreen
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          decelerationRate="fast">
           {content}
         </ScrollView>
       ) : (

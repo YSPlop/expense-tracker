@@ -1,26 +1,30 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AnalyticsSection } from '@/components/charts/AnalyticsSection';
-import { GlassButton } from '@/components/glass/GlassButton';
+import { GlassCard } from '@/components/glass';
 import { SwipeableTransactionList } from '@/components/transactions/SwipeableTransactionList';
-import {
-  TransactionSheet,
-  type TransactionSheetHandle,
-} from '@/components/transactions/TransactionSheet';
+import { AnimatedAmount } from '@/components/ui/AnimatedAmount';
 import { AnimatedBalance } from '@/components/ui/AnimatedBalance';
 import { SafeScreen } from '@/components/ui/SafeScreen';
 import { Toast } from '@/components/ui/Toast';
 import { Spacing, Typography } from '@/constants/theme';
+import { useTransactionSheet } from '@/context/TransactionSheetContext';
 import { useAppTheme } from '@/hooks/use-app-theme';
-import { useAppStore, useBalance, useRecentTransactions } from '@/store/use-app-store';
+import {
+  useAppStore,
+  useBalance,
+  useRecentTransactions,
+  useTotalByType,
+} from '@/store/use-app-store';
 import type { Transaction } from '@/types/transaction';
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
   const balance = useBalance();
+  const totalExpenses = useTotalByType('expense');
+  const totalIncome = useTotalByType('income');
   const transactions = useRecentTransactions();
-  const sheetRef = useRef<TransactionSheetHandle>(null);
+  const { openForEdit } = useTransactionSheet();
   const deleteTransaction = useAppStore((s) => s.deleteTransaction);
   const restoreTransaction = useAppStore((s) => s.restoreTransaction);
   const undo = useAppStore((s) => s.undo);
@@ -40,33 +44,42 @@ export default function HomeScreen() {
     clearUndo();
   }, [undo.transaction, restoreTransaction, clearUndo]);
 
-  const handlePressTransaction = useCallback((transaction: Transaction) => {
-    sheetRef.current?.openForEdit(transaction);
-  }, []);
+  const handlePressTransaction = useCallback(
+    (transaction: Transaction) => {
+      openForEdit(transaction);
+    },
+    [openForEdit]
+  );
 
   return (
     <View style={styles.root}>
-      <SafeScreen>
-        <AnimatedBalance cents={balance} />
+      <SafeScreen
+        header={
+          <GlassCard hero elevated>
+            <AnimatedBalance cents={balance} hero />
+          </GlassCard>
+        }>
+        <View style={styles.statsRow}>
+          <GlassCard style={styles.statCard} padding={Spacing.lg}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Expenses</Text>
+            <AnimatedAmount cents={totalExpenses} color={colors.expense} style={styles.statValue} />
+          </GlassCard>
 
-        <View style={styles.actions}>
-          <GlassButton label="Expense" variant="expense" onPress={() => sheetRef.current?.openForAdd('expense')} />
-          <GlassButton label="Income" variant="income" onPress={() => sheetRef.current?.openForAdd('income')} />
+          <GlassCard style={styles.statCard} padding={Spacing.lg}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Income</Text>
+            <AnimatedAmount cents={totalIncome} color={colors.income} style={styles.statValue} />
+          </GlassCard>
         </View>
 
-        <AnalyticsSection />
-
-        <View style={styles.listSection}>
+        <GlassCard padding={Spacing.lg}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent</Text>
           <SwipeableTransactionList
             transactions={transactions}
             onPressTransaction={handlePressTransaction}
             onDelete={handleDelete}
           />
-        </View>
+        </GlassCard>
       </SafeScreen>
-
-      <TransactionSheet ref={sheetRef} />
 
       <Toast
         visible={!!undo.transaction}
@@ -81,14 +94,26 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  actions: {
+  statsRow: {
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  listSection: {
-    gap: Spacing.md,
+  statCard: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  statLabel: {
+    ...Typography.caption,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
   },
   sectionTitle: {
     ...Typography.sectionTitle,
+    marginBottom: Spacing.md,
   },
 });

@@ -6,14 +6,18 @@ import {
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { CategoryPicker } from '@/components/categories/CategoryPicker';
+import { useSpringPress } from '@/hooks/motion/use-spring-press';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { useAppStore } from '@/store/use-app-store';
 import type { Transaction, TransactionType } from '@/types/transaction';
 import { Radius, Spacing, Typography } from '@/constants/theme';
 import { dollarsToCents, parseAmountInput } from '@/utils/money';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export type TransactionSheetHandle = {
   openForAdd: (type: TransactionType) => void;
@@ -70,7 +74,7 @@ export const TransactionSheet = forwardRef<TransactionSheetHandle, TransactionSh
       },
     }));
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
       const cents = dollarsToCents(amount);
       if (cents <= 0 || !categoryId) return;
 
@@ -93,11 +97,24 @@ export const TransactionSheet = forwardRef<TransactionSheetHandle, TransactionSh
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       bottomSheetRef.current?.dismiss();
       resetForm();
-    };
+    }, [
+      amount,
+      categoryId,
+      mode,
+      editingId,
+      type,
+      description,
+      updateTransaction,
+      addTransaction,
+      resetForm,
+    ]);
+
+    const { animatedStyle: saveAnimatedStyle, onPressIn, onPressOut, handlePress } =
+      useSpringPress({ onPress: handleSave, haptic: false });
 
     const renderBackdrop = useCallback(
       (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
-        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.55} />
       ),
       []
     );
@@ -110,8 +127,15 @@ export const TransactionSheet = forwardRef<TransactionSheetHandle, TransactionSh
         snapPoints={snapPoints}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: colors.glassFillStrong }}
-        handleIndicatorStyle={{ backgroundColor: colors.textSecondary }}
+        backgroundStyle={{
+          backgroundColor: colors.glassFillStrong,
+          borderTopLeftRadius: Radius.xl,
+          borderTopRightRadius: Radius.xl,
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: colors.glassBorder,
+          width: 40,
+        }}
         onDismiss={() => {
           resetForm();
           onDismiss?.();
@@ -122,14 +146,17 @@ export const TransactionSheet = forwardRef<TransactionSheetHandle, TransactionSh
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
 
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Amount</Text>
-          <BottomSheetTextInput
-            value={amount}
-            onChangeText={(t) => setAmount(parseAmountInput(t))}
-            keyboardType="decimal-pad"
-            placeholder="0.00"
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.amountInput, { color: colors.text, borderColor: colors.glassBorder }]}
-          />
+          <View style={[styles.amountRow, { borderColor: colors.glassBorder }]}>
+            <Text style={[styles.dollarSign, { color: colors.textSecondary }]}>$</Text>
+            <BottomSheetTextInput
+              value={amount}
+              onChangeText={(t) => setAmount(parseAmountInput(t))}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              style={[styles.amountInput, { color: colors.text }]}
+            />
+          </View>
 
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Description</Text>
           <BottomSheetTextInput
@@ -150,11 +177,17 @@ export const TransactionSheet = forwardRef<TransactionSheetHandle, TransactionSh
             onSelect={setCategoryId}
           />
 
-          <Pressable
-            onPress={handleSave}
-            style={[styles.saveButton, { backgroundColor: type === 'expense' ? colors.expense : colors.income }]}>
+          <AnimatedPressable
+            onPress={handlePress}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
+            style={[
+              styles.saveButton,
+              saveAnimatedStyle,
+              { backgroundColor: type === 'expense' ? colors.expense : colors.income },
+            ]}>
             <Text style={styles.saveText}>Save</Text>
-          </Pressable>
+          </AnimatedPressable>
         </BottomSheetView>
       </BottomSheetModal>
     );
@@ -178,13 +211,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.xs,
+  },
+  dollarSign: {
+    fontSize: 32,
+    fontWeight: '600',
+  },
   amountInput: {
     fontSize: 40,
     fontWeight: '700',
-    textAlign: 'center',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    textAlign: 'left',
     letterSpacing: -1,
+    minWidth: 100,
+    padding: 0,
   },
   input: {
     ...Typography.body,

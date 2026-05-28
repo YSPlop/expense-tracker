@@ -25,6 +25,7 @@ const MAPPING: Record<AppIconName, ComponentProps<typeof MaterialIcons>['name']>
   xmark: 'close',
   pencil: 'edit',
   trash: 'delete',
+  'trash.fill': 'delete',
   'chart.pie.fill': 'pie-chart',
   'chart.bar.fill': 'bar-chart',
   'chart.line.uptrend.xyaxis': 'show-chart',
@@ -38,6 +39,9 @@ const MAPPING: Record<AppIconName, ComponentProps<typeof MaterialIcons>['name']>
   'gift.fill': 'card-giftcard',
   airplane: 'flight',
   'book.fill': 'menu-book',
+  'gearshape.fill': 'settings',
+  'star.fill': 'star',
+  plus: 'add',
 };
 
 export function IconSymbol({
